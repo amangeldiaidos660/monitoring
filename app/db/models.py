@@ -30,6 +30,12 @@ class VideoStatus(StrEnum):
     FAILED = "failed"
 
 
+class CollectionRunStatus(StrEnum):
+    STARTED = "started"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class Source(Base):
     __tablename__ = "sources"
 
@@ -37,6 +43,10 @@ class Source(Base):
     source_type: Mapped[SourceType] = mapped_column(Enum(SourceType), nullable=False)
     platform: Mapped[Platform] = mapped_column(Enum(Platform), nullable=False)
     value: Mapped[str] = mapped_column(String(512), nullable=False)
+    region_code: Mapped[str] = mapped_column(String(8), nullable=False, default="KZ")
+    language: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
@@ -78,3 +88,40 @@ class RawMetadata(Base):
 
     video: Mapped[Video] = relationship(back_populates="raw_metadata")
 
+
+class ApiRateLimit(Base):
+    __tablename__ = "api_rate_limits"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=lambda: uuid4().hex)
+    platform: Mapped[Platform] = mapped_column(Enum(Platform), nullable=False)
+    endpoint: Mapped[str] = mapped_column(String(255), nullable=False)
+    remaining: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_after_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (UniqueConstraint("platform", "endpoint", name="uq_api_rate_limits_identity"),)
+
+
+class CollectionRun(Base):
+    __tablename__ = "collection_runs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=lambda: uuid4().hex)
+    source_id: Mapped[str | None] = mapped_column(ForeignKey("sources.id"), nullable=True)
+    platform: Mapped[Platform] = mapped_column(Enum(Platform), nullable=False)
+    source_type: Mapped[SourceType] = mapped_column(Enum(SourceType), nullable=False)
+    query_value: Mapped[str] = mapped_column(String(512), nullable=False)
+    status: Mapped[CollectionRunStatus] = mapped_column(
+        Enum(CollectionRunStatus),
+        nullable=False,
+        default=CollectionRunStatus.STARTED,
+    )
+    items_found: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     monitor_accounts_interval_minutes: int = Field(default=30, ge=15, le=60)
 
     tiktok_research_api_token: str = ""
+    tiktok_research_api_base_url: str = "https://open.tiktokapis.com"
+    tiktok_region_code: str = "KZ"
+    tiktok_query_days: int = Field(default=7, ge=1, le=30)
+    tiktok_max_count: int = Field(default=100, ge=1, le=100)
     instagram_graph_api_token: str = ""
 
     @property
@@ -51,4 +55,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-
