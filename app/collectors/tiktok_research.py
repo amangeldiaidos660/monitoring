@@ -25,13 +25,16 @@ DEFAULT_FIELDS = [
 
 
 class TikTokResearchApiError(RuntimeError):
-    pass
+    def __init__(self, message: str, status_code: int | None = None, retry_after_seconds: int | None = None) -> None:
+        self.status_code = status_code
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__(message)
 
 
 class TikTokResearchRateLimitError(TikTokResearchApiError):
     def __init__(self, retry_after_seconds: int | None = None) -> None:
         self.retry_after_seconds = retry_after_seconds
-        super().__init__("TikTok Research API rate limit exceeded")
+        super().__init__("TikTok Research API rate limit exceeded", status_code=429, retry_after_seconds=retry_after_seconds)
 
 
 @dataclass(frozen=True)
@@ -155,9 +158,9 @@ class TikTokResearchCollector(ApiCollector):
             retry_after = response.headers.get("retry-after")
             raise TikTokResearchRateLimitError(int(retry_after) if retry_after and retry_after.isdigit() else None)
         if response.status_code >= 500:
-            raise TikTokResearchApiError(f"TikTok Research API server error: {response.status_code}")
+            raise TikTokResearchApiError(f"TikTok Research API server error: {response.status_code}", status_code=response.status_code)
         if response.status_code >= 400:
-            raise TikTokResearchApiError(f"TikTok Research API request failed: {response.status_code} {response.text}")
+            raise TikTokResearchApiError(f"TikTok Research API request failed: {response.status_code} {response.text}", status_code=response.status_code)
         return response.json()
 
     def _parse_videos(self, payload: dict[str, Any]) -> list[ApiVideo]:

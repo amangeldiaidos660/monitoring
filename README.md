@@ -77,3 +77,25 @@ Required GitHub Actions secrets:
 4. Implement authorized browser session support where platform terms allow it.
 5. Add real collection tasks and persistence.
 6. Add Grafana/Prometheus logging stack after first successful collection run.
+
+## Database Migration And Seed
+
+Migrations are intentionally manual. After deploy, run on the server:
+
+```bash
+cd /opt/monitoring
+docker compose -f docker-compose.prod.yml exec api alembic upgrade head
+docker compose -f docker-compose.prod.yml exec api python -m app.cli.seed_sources
+```
+
+Run one collection smoke task manually:
+
+```bash
+docker compose -f docker-compose.prod.yml exec worker celery -A app.tasks.celery_app call app.tasks.collection.collect_keywords --kwargs='{"limit": 1}'
+```
+
+Check tables from PostgreSQL:
+
+```bash
+docker compose -f docker-compose.prod.yml exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select count(*) from sources;"
+```
