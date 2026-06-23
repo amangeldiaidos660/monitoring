@@ -121,7 +121,7 @@ class TikTokResearchCollector(ApiCollector):
             "query": {
                 "and": [
                     {
-                        "operation": "EQ",
+                        "operation": "IN",
                         "field_name": "region_code",
                         "field_values": [self.region_code],
                     },
@@ -134,6 +134,7 @@ class TikTokResearchCollector(ApiCollector):
             },
             **window.as_body_dates(),
             "max_count": self.max_count,
+            "is_random": False,
         }
         if cursor:
             body["cursor"] = cursor

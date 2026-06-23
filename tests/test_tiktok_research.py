@@ -15,13 +15,14 @@ def test_builds_official_keyword_query_with_kz_region() -> None:
     assert body == {
         "query": {
             "and": [
-                {"operation": "EQ", "field_name": "region_code", "field_values": ["KZ"]},
+                {"operation": "IN", "field_name": "region_code", "field_values": ["KZ"]},
                 {"operation": "EQ", "field_name": "keyword", "field_values": ["казино онлайн"]},
             ]
         },
         "start_date": "20260601",
         "end_date": "20260623",
         "max_count": 100,
+        "is_random": False,
     }
 
 
